@@ -29,6 +29,7 @@ const typeDefs = gql`
   type Mutation {
     signUp(input: SignUpInput): AuthUser!
     signIn(input: SignInInput): AuthUser!
+    createTaskList(title: String!): TaskList!
   }
 
   input SignUpInput {
@@ -100,6 +101,7 @@ const resolvers = {
         throw new Error('User already exists');
       }
     },
+
     signIn: async (_, { input }, { db }) => {
       const user = await db.collection('Users').findOne({ email: input.email });
       // Check if user exists and entered password is correct
@@ -110,6 +112,21 @@ const resolvers = {
         user,
         token: getToken(user),
       };
+    },
+
+    createTaskList: async (_, { title }, { db, user }) => {
+      if (!user) {
+        throw new Error('Please sign in to create a Task List.');
+      }
+
+      const newTaskList = {
+        title,
+        createdAt: new Date().toISOString(),
+        userIds: [user._id],
+      };
+
+      const result = await db.collection('TaskLists').insertOne(newTaskList);
+      return result.ops[0];
     },
   },
 
