@@ -75,7 +75,15 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
-    myTaskLists: () => [],
+    myTaskLists: async (_, __, { db, user }) => {
+      if (!user) {
+        throw new Error('Please sign in to continue.');
+      }
+      return await db
+        .collection('TaskLists')
+        .find({ userIds: user._id })
+        .toArray();
+    },
   },
 
   Mutation: {
