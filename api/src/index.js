@@ -24,12 +24,14 @@ const getUserFromToken = async (token, db) => {
 const typeDefs = gql`
   type Query {
     myTaskLists: [TaskList!]!
+    getTaskList(id: ID!): TaskList
   }
 
   type Mutation {
     signUp(input: SignUpInput): AuthUser!
     signIn(input: SignInInput): AuthUser!
     createTaskList(title: String!): TaskList!
+
     updateTaskList(id: ID!, title: String!): TaskList!
     deleteTaskList(id: ID!): Boolean!
   }
@@ -85,6 +87,12 @@ const resolvers = {
         .collection('TaskLists')
         .find({ userIds: user._id })
         .toArray();
+    },
+    getTaskList: async (_, { id, title }, { db, user }) => {
+      if (!user) {
+        throw new Error('Please sign in to continue.');
+      }
+      return await db.collection('TaskLists').findOne({ _id: ObjectId(id) });
     },
   },
 
