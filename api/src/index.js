@@ -68,7 +68,7 @@ const typeDefs = gql`
     id: ID!
     content: String
     isCompleted: Boolean!
-    taskList: TaskList
+    taskList: TaskList!
   }
 `;
 
