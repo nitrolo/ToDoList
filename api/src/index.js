@@ -37,6 +37,7 @@ const typeDefs = gql`
     addUserToTaskList(taskListId: ID!, userId: ID!): TaskList
 
     createToDo(content: String!, taskListId: ID!): ToDo!
+    updateToDo(id: ID!, content: String, isCompleted: Boolean): ToDo!
   }
 
   input SignUpInput {
@@ -220,6 +221,22 @@ const resolvers = {
       };
       const result = await db.collection('ToDo').insertOne(newToDo);
       return result.ops[0];
+    },
+
+    updateToDo: async (_, data, { db, user }) => {
+      if (!user) {
+        throw new Error('Please sign in to continue.');
+      }
+
+      const result = await db.collection('ToDo').updateOne(
+        {
+          _id: ObjectId(data.id),
+        },
+        {
+          $set: data,
+        }
+      );
+      return await db.collection('ToDo').findOne({ _id: ObjectId(data.id) });
     },
   },
 
