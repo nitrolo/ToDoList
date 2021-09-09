@@ -35,6 +35,10 @@ const typeDefs = gql`
     updateTaskList(id: ID!, title: String!): TaskList!
     deleteTaskList(id: ID!): Boolean!
     addUserToTaskList(taskListId: ID!, userId: ID!): TaskList
+
+    createToDo(content: String!, taskListId: ID!): ToDo!
+    updateToDo(id: ID!, content: String, isCompleted: Boolean): ToDo!
+    deleteToDo(id: ID!): Boolean!
   }
 
   input SignUpInput {
@@ -205,6 +209,45 @@ const resolvers = {
       taskList.userIds.push(ObjectId(userId));
       return taskList;
     },
+
+    // CRUD ToDo
+    createToDo: async (_, { content, taskListId }, { db, user }) => {
+      if (!user) {
+        throw new Error('Please sign in to continue.');
+      }
+      const newToDo = {
+        content,
+        taskListId: ObjectId(taskListId),
+        isCompleted: false,
+      };
+      const result = await db.collection('ToDo').insertOne(newToDo);
+      return result.ops[0];
+    },
+
+    updateToDo: async (_, data, { db, user }) => {
+      if (!user) {
+        throw new Error('Please sign in to continue.');
+      }
+
+      const result = await db.collection('ToDo').updateOne(
+        {
+          _id: ObjectId(data.id),
+        },
+        {
+          $set: data,
+        }
+      );
+      return await db.collection('ToDo').findOne({ _id: ObjectId(data.id) });
+    },
+
+    deleteToDo: async (_, { id }, { db, user }) => {
+      if (!user) {
+        throw new Error('Please sign in to continue.');
+      }
+      // TODO: only collaborators should be able to delete.
+      await db.collection('ToDo').removeOne({ _id: ObjectId(id) });
+      return true;
+    },
   },
 
   User: {
@@ -214,11 +257,30 @@ const resolvers = {
 
   TaskList: {
     id: ({ _id, id }) => _id || id,
-    progress: () => 0,
+    progress: async ({ _id }, _, { db }) => {
+      const todos = await db
+        .collection('ToDo')
+        .find({ taskListId: ObjectId(_id) })
+        .toArray();
+      const completed = todos.filter((todo) => todo.isCompleted);
+
+      return todos.length ? 100 * (completed.length / todos.length) : 0;
+    },
     users: async ({ userIds }, _, { db }) =>
       Promise.all(
         userIds.map((userId) => db.collection('Users').findOne({ _id: userId }))
       ),
+    todos: async ({ _id }, _, { db }) =>
+      await db
+        .collection('ToDo')
+        .find({ taskListId: ObjectId(_id) })
+        .toArray(),
+  },
+
+  ToDo: {
+    id: ({ _id, id }) => _id || id,
+    taskList: async ({ taskListId }, _, { db }) =>
+      await db.collection('TaskLists').findOne({ _id: ObjectId(taskListId) }),
   },
 };
 
