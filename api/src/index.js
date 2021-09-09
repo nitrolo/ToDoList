@@ -61,15 +61,28 @@ const resolvers = {
   Query: {
     myTaskLists: () => [],
   },
+
   Mutation: {
-    signUp: (_, { input }) => {
+    signUp: async (_, { input }, { db }) => {
+      // Password encryption
       const hashedPassword = bcrypt.hashSync(input.password);
       const user = {
         ...input,
         password: hashedPassword,
       };
+      // Add user to the database
+      const result = await db.collection('Users').insert(user);
+      return {
+        user,
+        token: 'token',
+      };
     },
     signIn: () => {},
+  },
+
+  User: {
+    // _id for MongoDB, id for any other dbms
+    id: ({ _id, id }) => _id || id,
   },
 };
 
