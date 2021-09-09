@@ -213,7 +213,11 @@ const resolvers = {
       if (!user) {
         throw new Error('Please sign in to continue.');
       }
-      const newToDo = { content, taskListId, isCompleted: false };
+      const newToDo = {
+        content,
+        taskListId: ObjectId(taskListId),
+        isCompleted: false,
+      };
       const result = await db.collection('ToDo').insertOne(newToDo);
       return result.ops[0];
     },
