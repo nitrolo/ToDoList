@@ -1,10 +1,25 @@
 const { ApolloServer, gql } = require('apollo-server');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 dotenv.config();
 
-const { DB_URI, DB_NAME } = process.env;
+const { DB_URI, DB_NAME, JWT_SECRET } = process.env;
+
+const getToken = (user) =>
+  jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7 days' });
+
+const getUserFromToken = async (token, db) => {
+  if (!token) {
+    return null;
+  }
+  const tokenData = jwt.verify(token, JWT_SECRET);
+  if (!tokenData?.id) {
+    return null;
+  }
+  return await db.collection('Users').findOne({ _id: ObjectId(tokenData.id) });
+};
 
 const typeDefs = gql`
   type Query {
@@ -79,7 +94,7 @@ const resolvers = {
         db.collection('Users').insertOne(user);
         return {
           user,
-          token: 'token',
+          token: getToken(user),
         };
       } else {
         throw new Error('User already exists');
@@ -93,7 +108,7 @@ const resolvers = {
       }
       return {
         user,
-        token: 'token',
+        token: getToken(user),
       };
     },
   },
@@ -112,13 +127,16 @@ const start = async () => {
   await client.connect();
   const db = client.db(DB_NAME);
 
-  const context = {
-    db,
-  };
-
   // The ApolloServer constructor requires two parameters: your schema
   // definition and your set of resolvers.
-  const server = new ApolloServer({ typeDefs, resolvers, context });
+  const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+    context: async ({ req }) => {
+      const user = await getUserFromToken(req.headers.authorization, db);
+      return { db, user };
+    },
+  });
 
   // The `listen` method launches a web server.
   server.listen().then(({ url }) => {
