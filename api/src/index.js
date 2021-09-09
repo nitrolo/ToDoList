@@ -87,17 +87,8 @@ const resolvers = {
     },
     signIn: async (_, { input }, { db }) => {
       const user = await db.collection('Users').findOne({ email: input.email });
-      // Check if user exists
-      if (!user) {
-        throw new Error('Invalid email or password.');
-      }
-
-      // Check if password is correct
-      const isPasswordCorrect = bcrypt.compareSync(
-        input.password,
-        user.password
-      );
-      if (!isPasswordCorrect) {
+      // Check if user exists and entered password is correct
+      if (!user || !bcrypt.compareSync(input.password, user.password)) {
         throw new Error('Invalid email or password.');
       }
       return {
