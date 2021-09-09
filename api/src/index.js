@@ -70,12 +70,20 @@ const resolvers = {
         ...input,
         password: hashedPassword,
       };
-      // Add user to the database
-      const result = await db.collection('Users').insert(user);
-      return {
-        user,
-        token: 'token',
-      };
+      const result = await db
+        .collection('Users')
+        .findOne({ email: input.email });
+      // Check if user already exists
+      if (!result) {
+        // Add user to the database
+        db.collection('Users').insertOne(user);
+        return {
+          user,
+          token: 'token',
+        };
+      } else {
+        throw new Error('User already exists');
+      }
     },
     signIn: () => {},
   },
