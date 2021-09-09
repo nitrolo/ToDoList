@@ -235,6 +235,11 @@ const resolvers = {
       Promise.all(
         userIds.map((userId) => db.collection('Users').findOne({ _id: userId }))
       ),
+    todos: async ({ _id }, _, { db }) =>
+      await db
+        .collection('ToDo')
+        .find({ taskListId: ObjectId(_id) })
+        .toArray(),
   },
 
   ToDo: {
