@@ -24,11 +24,17 @@ const getUserFromToken = async (token, db) => {
 const typeDefs = gql`
   type Query {
     myTaskLists: [TaskList!]!
+    getTaskList(id: ID!): TaskList
   }
 
   type Mutation {
     signUp(input: SignUpInput): AuthUser!
     signIn(input: SignInInput): AuthUser!
+    createTaskList(title: String!): TaskList!
+
+    updateTaskList(id: ID!, title: String!): TaskList!
+    deleteTaskList(id: ID!): Boolean!
+    addUserToTaskList(taskListId: ID!, userId: ID!): TaskList
   }
 
   input SignUpInput {
@@ -68,13 +74,27 @@ const typeDefs = gql`
     id: ID!
     content: String
     isCompleted: Boolean!
-    taskList: TaskList
+    taskList: TaskList!
   }
 `;
 
 const resolvers = {
   Query: {
-    myTaskLists: () => [],
+    myTaskLists: async (_, __, { db, user }) => {
+      if (!user) {
+        throw new Error('Please sign in to continue.');
+      }
+      return await db
+        .collection('TaskLists')
+        .find({ userIds: user._id })
+        .toArray();
+    },
+    getTaskList: async (_, { id, title }, { db, user }) => {
+      if (!user) {
+        throw new Error('Please sign in to continue.');
+      }
+      return await db.collection('TaskLists').findOne({ _id: ObjectId(id) });
+    },
   },
 
   Mutation: {
@@ -100,6 +120,7 @@ const resolvers = {
         throw new Error('User already exists');
       }
     },
+
     signIn: async (_, { input }, { db }) => {
       const user = await db.collection('Users').findOne({ email: input.email });
       // Check if user exists and entered password is correct
@@ -111,11 +132,93 @@ const resolvers = {
         token: getToken(user),
       };
     },
+
+    createTaskList: async (_, { title }, { db, user }) => {
+      if (!user) {
+        throw new Error('Please sign in to create a Task List.');
+      }
+
+      const newTaskList = {
+        title,
+        createdAt: new Date().toISOString(),
+        userIds: [user._id],
+      };
+
+      const result = await db.collection('TaskLists').insertOne(newTaskList);
+      return result.ops[0];
+    },
+
+    updateTaskList: async (_, { id, title }, { db, user }) => {
+      if (!user) {
+        throw new Error('Please sign in to continue.');
+      }
+
+      const result = await db.collection('TaskLists').updateOne(
+        {
+          _id: ObjectId(id),
+        },
+        {
+          $set: {
+            title,
+          },
+        }
+      );
+      return await db.collection('TaskLists').findOne({ _id: ObjectId(id) });
+    },
+
+    deleteTaskList: async (_, { id, title }, { db, user }) => {
+      if (!user) {
+        throw new Error('Please sign in to continue.');
+      }
+      // TODO: only collaborators should be able to delete.
+      await db.collection('TaskLists').removeOne({ _id: ObjectId(id) });
+      return true;
+    },
+
+    addUserToTaskList: async (_, { taskListId, userId }, { db, user }) => {
+      if (!user) {
+        throw new Error('Please sign in to continue.');
+      }
+
+      const taskList = await db
+        .collection('TaskLists')
+        .findOne({ _id: ObjectId(taskListId) });
+      if (!taskList) {
+        return null;
+      }
+      if (
+        taskList.userIds.find((dbId) => dbId.toString() === userId.toString())
+      ) {
+        return taskList;
+      }
+
+      await db.collection('TaskLists').updateOne(
+        {
+          _id: ObjectId(taskListId),
+        },
+        {
+          $push: {
+            userIds: ObjectId(userId),
+          },
+        }
+      );
+      taskList.userIds.push(ObjectId(userId));
+      return taskList;
+    },
   },
 
   User: {
     // _id for MongoDB, id for any other dbms
     id: ({ _id, id }) => _id || id,
+  },
+
+  TaskList: {
+    id: ({ _id, id }) => _id || id,
+    progress: () => 0,
+    users: async ({ userIds }, _, { db }) =>
+      Promise.all(
+        userIds.map((userId) => db.collection('Users').findOne({ _id: userId }))
+      ),
   },
 };
 
