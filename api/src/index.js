@@ -1,6 +1,7 @@
 const { ApolloServer, gql } = require('apollo-server');
 const { MongoClient } = require('mongodb');
 const dotenv = require('dotenv');
+const bcrypt = require('bcryptjs');
 dotenv.config();
 
 const { DB_URI, DB_NAME } = process.env;
@@ -61,7 +62,13 @@ const resolvers = {
     myTaskLists: () => [],
   },
   Mutation: {
-    signUp: (_, { input }) => {},
+    signUp: (_, { input }) => {
+      const hashedPassword = bcrypt.hashSync(input.password);
+      const user = {
+        ...input,
+        password: hashedPassword,
+      };
+    },
     signIn: () => {},
   },
 };
