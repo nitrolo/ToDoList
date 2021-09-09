@@ -34,6 +34,7 @@ const typeDefs = gql`
 
     updateTaskList(id: ID!, title: String!): TaskList!
     deleteTaskList(id: ID!): Boolean!
+    addUserToTaskList(taskListId: ID!, userId: ID!): TaskList
   }
 
   input SignUpInput {
@@ -172,6 +173,37 @@ const resolvers = {
       // TODO: only collaborators should be able to delete.
       await db.collection('TaskLists').removeOne({ _id: ObjectId(id) });
       return true;
+    },
+
+    addUserToTaskList: async (_, { taskListId, userId }, { db, user }) => {
+      if (!user) {
+        throw new Error('Please sign in to continue.');
+      }
+
+      const taskList = await db
+        .collection('TaskLists')
+        .findOne({ _id: ObjectId(taskListId) });
+      if (!taskList) {
+        return null;
+      }
+      if (
+        taskList.userIds.find((dbId) => dbId.toString() === userId.toString())
+      ) {
+        return taskList;
+      }
+
+      await db.collection('TaskLists').updateOne(
+        {
+          _id: ObjectId(taskListId),
+        },
+        {
+          $push: {
+            userIds: ObjectId(userId),
+          },
+        }
+      );
+      taskList.userIds.push(ObjectId(userId));
+      return taskList;
     },
   },
 
