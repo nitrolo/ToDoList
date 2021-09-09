@@ -134,6 +134,15 @@ const resolvers = {
     // _id for MongoDB, id for any other dbms
     id: ({ _id, id }) => _id || id,
   },
+
+  TaskList: {
+    id: ({ _id, id }) => _id || id,
+    progress: () => 0,
+    users: async ({ userIds }, _, { db }) =>
+      Promise.all(
+        userIds.map((userId) => db.collection('Users').findOne({ _id: userId }))
+      ),
+  },
 };
 
 const start = async () => {
