@@ -257,7 +257,15 @@ const resolvers = {
 
   TaskList: {
     id: ({ _id, id }) => _id || id,
-    progress: () => 0,
+    progress: async ({ _id }, _, { db }) => {
+      const todos = await db
+        .collection('ToDo')
+        .find({ taskListId: ObjectId(_id) })
+        .toArray();
+      const completed = todos.filter((todo) => todo.isCompleted);
+
+      return todos.length ? 100 * (completed.length / todos.length) : 0;
+    },
     users: async ({ userIds }, _, { db }) =>
       Promise.all(
         userIds.map((userId) => db.collection('Users').findOne({ _id: userId }))
