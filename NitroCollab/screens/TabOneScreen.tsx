@@ -1,34 +1,13 @@
-import React, { useState } from 'react';
-import { StyleSheet, TextInput } from 'react-native';
-import Checkbox from '../components/Checkbox';
+import React from 'react';
+import { StyleSheet } from 'react-native';
+import ToDoItem from '../components/ToDoItem';
 import { Text, View } from '../components/Themed';
 
 export default function TabOneScreen() {
-  const [value, setValue] = useState(false);
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>ToDo</Text>
-      <View style={{ alignItems: 'center', flexDirection: 'row' }}>
-        {/* checkbox */}
-        <Checkbox
-          isChecked={value}
-          onPress={() => {
-            setValue(!value);
-          }}
-        />
-
-        {/* Text input */}
-        <TextInput
-          style={{
-            color: 'black',
-            flex: 1,
-            fontSize: 18,
-            marginLeft: 12,
-          }}
-          multiline
-        />
-      </View>
+      <ToDoItem />
     </View>
   );
 }
