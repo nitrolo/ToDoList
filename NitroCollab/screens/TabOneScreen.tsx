@@ -9,7 +9,7 @@ export default function TabOneScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>ToDo</Text>
-      <View style={{ flexDirection: 'row' }}>
+      <View style={{ alignItems: 'center', flexDirection: 'row' }}>
         {/* checkbox */}
         <Checkbox
           isChecked={value}
@@ -24,7 +24,9 @@ export default function TabOneScreen() {
             color: 'black',
             flex: 1,
             fontSize: 18,
+            marginLeft: 12,
           }}
+          multiline
         />
       </View>
     </View>
