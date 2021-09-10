@@ -3,6 +3,8 @@ import { FlatList, StyleSheet } from 'react-native';
 import ToDoItem from '../components/ToDoItem';
 import { Text, View } from '../components/Themed';
 
+let id = '4';
+
 export default function TabOneScreen() {
   const [todos, setTodos] = useState([
     {
@@ -22,13 +24,21 @@ export default function TabOneScreen() {
     },
   ]);
 
+  const createNewItem = (atIndex: number) => {
+    const newTodos = [...todos];
+    newTodos.splice(atIndex, 0, { id: id, content: '', isCompleted: false });
+    setTodos(newTodos);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>ToDo</Text>
 
       <FlatList
         data={todos}
-        renderItem={({ item }) => <ToDoItem todo={item} />}
+        renderItem={({ item, index }) => (
+          <ToDoItem todo={item} onSubmit={() => createNewItem(index + 1)} />
+        )}
         style={{ width: '100%' }}
       />
     </View>
