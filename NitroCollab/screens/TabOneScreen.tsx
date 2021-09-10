@@ -1,16 +1,52 @@
-import * as React from 'react';
-import { StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { FlatList, StyleSheet, TextInput } from 'react-native';
+import ToDoItem from '../components/ToDoItem';
+import { View } from '../components/Themed';
 
-import EditScreenInfo from '../components/EditScreenInfo';
-import { Text, View } from '../components/Themed';
-import { RootTabScreenProps } from '../types';
+let id = '4';
 
-export default function TabOneScreen({ navigation }: RootTabScreenProps<'TabOne'>) {
+export default function TabOneScreen() {
+  const [title, setTitle] = useState('');
+  const [todos, setTodos] = useState([
+    {
+      id: '1',
+      content: 'Dummy ToDo 1',
+      isCompleted: false,
+    },
+    {
+      id: '2',
+      content: 'Dummy ToDo 2',
+      isCompleted: false,
+    },
+    {
+      id: '3',
+      content: 'Dummy ToDo 3',
+      isCompleted: false,
+    },
+  ]);
+
+  const createNewItem = (atIndex: number) => {
+    const newTodos = [...todos];
+    newTodos.splice(atIndex, 0, { id: id, content: '', isCompleted: false });
+    setTodos(newTodos);
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="/screens/TabOneScreen.tsx" />
+      <TextInput
+        value={title}
+        onChangeText={setTitle}
+        placeholder={'Title'}
+        style={styles.title}
+      />
+
+      <FlatList
+        data={todos}
+        renderItem={({ item, index }) => (
+          <ToDoItem todo={item} onSubmit={() => createNewItem(index + 1)} />
+        )}
+        style={{ width: '100%' }}
+      />
     </View>
   );
 }
@@ -19,15 +55,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    padding: 12,
   },
   title: {
+    color: 'white',
     fontSize: 20,
     fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
+    marginBottom: 12,
+    textAlign: 'center',
+    width: '100%',
   },
 });
