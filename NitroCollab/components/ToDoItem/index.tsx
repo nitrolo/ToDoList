@@ -26,7 +26,7 @@ const ToDoItem = ({ todo, onSubmit }: ToDoItemProps) => {
 
   useEffect(() => {
     if (input.current) {
-      input.current.focus();
+      input?.current?.focus();
     }
   }, [input]);
 
