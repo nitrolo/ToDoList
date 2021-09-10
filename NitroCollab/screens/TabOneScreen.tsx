@@ -1,16 +1,32 @@
-import * as React from 'react';
-import { StyleSheet } from 'react-native';
-
-import EditScreenInfo from '../components/EditScreenInfo';
+import React, { useState } from 'react';
+import { StyleSheet, TextInput } from 'react-native';
+import Checkbox from '../components/Checkbox';
 import { Text, View } from '../components/Themed';
-import { RootTabScreenProps } from '../types';
 
-export default function TabOneScreen({ navigation }: RootTabScreenProps<'TabOne'>) {
+export default function TabOneScreen() {
+  const [value, setValue] = useState(false);
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="/screens/TabOneScreen.tsx" />
+      <Text style={styles.title}>ToDo</Text>
+      <View style={{ flexDirection: 'row' }}>
+        {/* checkbox */}
+        <Checkbox
+          isChecked={value}
+          onPress={() => {
+            setValue(!value);
+          }}
+        />
+
+        {/* Text input */}
+        <TextInput
+          style={{
+            color: 'black',
+            flex: 1,
+            fontSize: 18,
+          }}
+        />
+      </View>
     </View>
   );
 }
@@ -19,15 +35,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    padding: 12,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
   },
 });
